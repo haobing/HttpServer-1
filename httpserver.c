@@ -48,7 +48,7 @@ int main( int argc, char const *argv[] ) {
     epfd = epoll_create(256);
     // setnonblocking(server_sock);
     ev.data.fd = server_sock;
-    ev.events = EPOLLIN|EPOLLET; // 当绑定的那个socket文件描述符可读的时候，就触发事件
+    ev.events = EPOLLIN; // 当绑定的那个socket文件描述符可读的时候，就触发事件（默认水平触发）
     epoll_ctl(epfd, EPOLL_CTL_ADD, server_sock, &ev); // 把绑定的按个socket文件描述符添加到内核的红黑树里面
 
 
@@ -66,7 +66,11 @@ int main( int argc, char const *argv[] ) {
 					error_die( "accept" );
 				}
 
-				// setnonblocking(client_sock);
+				setnonblocking(client_sock);
+				ev.data.fd = client_sock;
+                ev.events = EPOLLOUT | EPOLLET;
+                epoll_ctl(epfd, EPOLL_CTL_ADD, server_sock, &ev);
+
                 // 往线程池中的任务队列里面添加任务
             	if ( threadpool_add( pool, &accept_request, (void*)&client_sock, 0 ) != 0 ) { // 添加一个任务到线程池结构中的任务队列里面
 					printf( "Job add error." );
